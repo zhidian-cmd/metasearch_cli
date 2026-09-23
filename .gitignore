@@ -1,0 +1,18 @@
+# 构建产物
+/metasearch_cli
+/metasearch_cli.exe
+*.exe
+
+# 密钥：绝不上库
+.env
+*.env
+!.env.example
+
+# 临时输出
+result.json
+out/
+*.jsonl
+
+# Python 缓存（gui.py 运行时自动生成）
+__pycache__/
+*.pyc
