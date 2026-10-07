@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/zhidian-cmd/metasearch_cli/internal/coherence"
 	"github.com/zhidian-cmd/metasearch_cli/internal/config"
 	"github.com/zhidian-cmd/metasearch_cli/internal/model"
 	"github.com/zhidian-cmd/metasearch_cli/internal/provider"
@@ -157,6 +158,38 @@ func Collect(ctx context.Context, opt Options) Outcome {
 	// 引擎顺序稳定化，便于输出对比
 	sort.SliceStable(collected, func(i, j int) bool { return collected[i].engine < collected[j].engine })
 
+	// ---------- 桶相干度判定（V10.6：只打标不删，见 internal/coherence） ----------
+	//
+	// 动机：Bing 类引擎被反感时返回 200 + 十条只匹配 query 首词的格式完好结果
+	//（"rust ownership borrowing" → 游戏 Rust 页），逐条闸拦不住这种"长得像成功"，
+	// 融合排序把噪声插进每份答案。整桶信号才看得见。
+	// witness 门控：只有另一个桶 ≥0.5 证明"回显可能"时才判诱饵，冷门 query
+	// 全体弱桶不误杀。全局超时触发时跳过判定（fail-open）。
+	coherenceScores := map[string]*float64{}
+	decoyEngines := map[string]bool{}
+	if ctx.Err() == nil {
+		buckets := map[string][]coherence.Row{}
+		for _, r := range collected {
+			if r.err != nil {
+				continue
+			}
+			rows := make([]coherence.Row, 0, len(r.items))
+			for _, it := range r.items {
+				rows = append(rows, coherence.Row{Title: it.Title, Snippet: it.Snippet, URL: it.URL})
+			}
+			buckets[r.engine] = rows
+		}
+		scores, decoy := coherence.Judge(opt.Query, buckets)
+		for e, sc := range scores {
+			v := sc
+			coherenceScores[e] = &v
+		}
+		decoyEngines = decoy
+		if len(decoy) > 0 {
+			opt.logf("coherence: decoy buckets %v", decoy)
+		}
+	}
+
 	// ---------- 归一化：精确 URL 相等合并，并集引擎、保留各引擎最靠前排名 ----------
 	out := Outcome{}
 	idx := map[string]int{}
@@ -173,6 +206,9 @@ func Collect(ctx context.Context, opt Options) Outcome {
 			continue
 		}
 		stat.OK = true
+		// 桶相干度（V10.6）：分数与 decoy 标记透出，删不删由调用方决定。
+		stat.Coherence = coherenceScores[r.engine]
+		stat.Decoy = decoyEngines[r.engine]
 		itemCount := 0
 		for rank, it := range r.items {
 			// 每引擎入池上限 maxPer(= config.DefaultLimit)。注意它**不等于** opt.Limit(-limit)：

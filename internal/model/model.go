@@ -135,6 +135,14 @@ type EngineStat struct {
 	Count     int    `json:"count"`
 	LatencyMS int64  `json:"latency_ms"`
 	Error     string `json:"error,omitempty"`
+	// Coherence 桶相干度（V10.6）：query 去首词后的 term 在本桶 title+snippet+url
+	// 中的覆盖率。nil = 无法判定（桶内 <4 条或切不出 anchor/rest），调用方按健康
+	// 处理。只打标不删——"过滤 = 删结果一律不做"契约红线，删不删由调用方决定。
+	// 指针形态：0.0 是真实的诱饵分值，不能用 omitempty 丢掉。
+	Coherence *float64 `json:"coherence,omitempty"`
+	// Decoy true = 该桶判为诱饵（Coherence < 0.3 且存在 witness 桶 ≥0.5）。
+	// 判定算法见 internal/coherence（移植自 free-search-mcp，MIT）。
+	Decoy bool `json:"decoy,omitempty"`
 }
 
 // DedupStage 单个去重阶段的减量（阶段名自描述，避免"哪一档砍了几条"要靠猜）。
