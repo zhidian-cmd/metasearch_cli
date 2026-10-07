@@ -82,7 +82,7 @@ const PrecheckWorkers = 32
 // PaidEngines 需要 key，配了才启用。
 var (
 	FreeEngines = []string{"bing", "anysearch", "quark"}
-	PaidEngines = []string{"exa", "tavily", "serpapi", "qianfan", "metaso"}
+	PaidEngines = []string{"exa", "tavily", "serpapi", "qianfan", "metaso", "tinyfish"}
 )
 
 // AllEngines 返回全部已实现的引擎名（升序）。
@@ -172,6 +172,7 @@ var APIKeyVars = map[string]string{
 	"serpapi":   "SERPAPI_API_KEY",
 	"qianfan":   "QIANFAN_API_KEY",
 	"metaso":    "METASO_API_KEY",
+	"tinyfish":  "TINYFISH_API_KEY",
 }
 
 // ProviderOfEnvVar 反查：环境变量名 → provider 名（apikey 命令用）。

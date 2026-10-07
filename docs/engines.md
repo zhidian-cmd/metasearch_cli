@@ -4,8 +4,20 @@
 > 面向"要改某个引擎"的读者；**使用方式与设计取舍**分别见 [`../README.md`](../README.md)  
 > 与 [`decisions.md`](decisions.md)，性能形态见 [`perf.md`](perf.md)。
 >
-> 引擎集固定 7 个：**bing / anysearch / quark（免费）+ exa / tavily / serpapi / qianfan（付费）**。  
+> 引擎集固定 8 个：**bing / anysearch / quark（免费）+ exa / tavily / serpapi / qianfan / tinyfish（付费）**。  
 > `bocha` 与 `zhipu` 已按要求删除，不要加回来。
+
+---
+
+## 〇、tinyfish（V10.6-A 新增）
+
+- 端点 `GET https://api.search.tinyfish.ai`，请求头 `X-API-Key`，免费额度 **12,000 次/天**。
+- 2026-10-07 实测 6 请求全 200，延迟 2.3~7.1s；**中文直发质量优秀**（食品包装/高血压两题
+  20 条几乎全切题，权威密度高：cas.cn / WHO / UpToDate 中文 / 新华网）→ 不带语言参数、
+  不做翻译桥；英文 query 返回的多是市场报告工厂页（同质化）。
+- `date` 原样透传（web 绝对式 "Jun 4, 2025"、news 相对式 "55 months ago"），归一交给
+  调用方；`site_name` 进 Signals.Source；响应 `page` 字段翻页语义未说明，首版单页 10 条。
+- 测试 `tinyfish_test.go` 用 httptest 注入端点（端点是包级 var，仅测试可改）。
 
 ---
 

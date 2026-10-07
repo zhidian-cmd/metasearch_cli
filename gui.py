@@ -19,7 +19,7 @@ from pathlib import Path
 from tkinter import ttk, messagebox
 
 EXE = Path(__file__).with_name("metasearch_cli.exe")
-PROVIDERS = ["qianfan", "exa", "tavily", "serpapi", "anysearch", "metaso"]
+PROVIDERS = ["qianfan", "exa", "tavily", "serpapi", "tinyfish", "anysearch", "metaso"]
 
 
 def exe_ready() -> bool:
